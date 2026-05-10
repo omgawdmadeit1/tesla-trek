@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TESLA TREK • Fleet + XYO</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    body { font-family: 'Inter', system_ui, sans-serif; }
+    .font-display { font-family: 'Space Grotesk', 'Inter', sans-serif; font-weight: 600; }
+  </style>
+</head>
+<body class="bg-[#0a0a0a] text-white">
+  <div class="min-h-screen">
+    <!-- Navbar -->
+    <nav class="border-b border-gray-800 bg-black/80 backdrop-blur-lg sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-x-3">
+          <i class="fa-solid fa-car text-[#e31937] text-3xl"></i>
+          <div>
+            <div class="font-display text-2xl font-semibold tracking-tighter">TESLA TREK</div>
+            <div class="text-[10px] text-gray-500 -mt-1">FLEET API + XYO</div>
+          </div>
+        </div>
+        <div id="connection-status" class="px-3 py-1 rounded-full bg-gray-900 text-xs flex items-center gap-x-1.5">
+          <span class="text-gray-400">Not Connected</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="max-w-7xl mx-auto px-6 pt-10 pb-6">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-y-4">
+        <div>
+          <div class="uppercase tracking-[3px] text-xs text-gray-500 mb-1">POWERED BY TESLA FLEET API</div>
+          <h1 class="font-display text-6xl tracking-tighter">Your Tesla.<br>Your Adventures.</h1>
+        </div>
+        <button onclick="connectTesla()" class="px-8 py-3 bg-white text-black font-semibold rounded-2xl flex items-center gap-x-2 hover:bg-zinc-200">
+          <i class="fa-solid fa-link"></i>
+          <span>Connect Your Tesla</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Live Vehicle Data -->
+    <div class="max-w-7xl mx-auto px-6">
+      <div id="vehicle-panel" class="hidden bg-zinc-900 border border-zinc-800 rounded-3xl p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <div class="text-sm text-gray-400">LIVE FROM YOUR TESLA</div>
+            <div id="vehicle-name" class="font-semibold text-2xl"></div>
+          </div>
+          <div class="text-right">
+            <div id="battery-level" class="text-5xl font-semibold tabular-nums"></div>
+            <div id="battery-range" class="text-xs text-emerald-400 -mt-1"></div>
+          </div>
+        </div>
+        <div class="flex items-center gap-x-2 text-sm">
+          <i class="fa-solid fa-map-marker-alt text-[#e31937]"></i>
+          <span id="vehicle-location" class="font-mono"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Treasure Hunt -->
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="font-semibold text-2xl">🗺️ XYO Treasure Hunt</h2>
+          <p class="text-gray-400 text-sm">Location verified by Tesla Fleet API + XYO Network</p>
+        </div>
+        <div class="text-right">
+          <div id="found-count" class="text-4xl font-semibold text-[#e31937]">0</div>
+          <div class="text-xs text-gray-500 -mt-1">FOUND</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="treasures-list"></div>
+    </div>
+  </div>
+
+  <script>
+    let treasures = [
+      { id: 1, lat: 37.7749, lon: -122.4194, reward: "50 kWh Supercharging Credit", rarity: "Common", found: false },
+      { id: 2, lat: 37.7849, lon: -122.4294, reward: "Limited Edition Tesla Badge", rarity: "Rare", found: false },
+      { id: 3, lat: 37.7649, lon: -122.4094, reward: "Free FSD Transfer", rarity: "Epic", found: false },
+    ];
+
+    function renderTreasures() {
+      const container = document.getElementById('treasures-list');
+      container.innerHTML = '';
+      treasures.forEach(treasure => {
+        const div = document.createElement('div');
+        div.className = `p-5 rounded-2xl border ${treasure.found ? 'bg-zinc-950 border-emerald-900' : 'bg-zinc-900 border-zinc-800'}`;
+        div.innerHTML = `
+          <div class="flex justify-between items-start">
+            <div>
+              <div class="flex items-center gap-x-2">
+                <span class="text-xs px-2.5 py-px rounded-full ${treasure.rarity === 'Epic' ? 'bg-rose-950 text-rose-400' : 'bg-zinc-800 text-zinc-400'}">${treasure.rarity}</span>
+              </div>
+              <div class="mt-1.5 text-lg font-medium">${treasure.reward}</div>
+              <div class="text-xs text-gray-500">Lat ${treasure.lat} • Lon ${treasure.lon}</div>
+            </div>
+            <div class="text-right">
+              ${treasure.found 
+                ? `<div class="text-emerald-400 flex items-center gap-x-1 text-sm"><i class="fa-solid fa-check-double"></i> <span>Claimed</span></div>`
+                : `<button onclick="claimTreasure(${treasure.id})" class="px-5 py-2 text-xs font-medium bg-white text-black rounded-xl hover:bg-zinc-200">VERIFY LOCATION</button>`
+              }
+            </div>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+      document.getElementById('found-count').innerText = treasures.filter(t => t.found).length;
+    }
+
+    function claimTreasure(id) {
+      const treasure = treasures.find(t => t.id === id);
+      if (!treasure || treasure.found) return;
+      treasure.found = true;
+      renderTreasures();
+      const msg = document.createElement('div');
+      msg.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-2xl shadow-xl flex items-center gap-x-2';
+      msg.innerHTML = `🎉 Bound Witness verified! You claimed: ${treasure.reward}`;
+      document.body.appendChild(msg);
+      setTimeout(() => msg.remove(), 2800);
+    }
+
+    function connectTesla() {
+      window.location.href = '/auth/tesla';
+    }
+
+    async function loadVehicleData() {
+      try {
+        const res = await fetch('/api/vehicle-data');
+        if (!res.ok) return;
+        const data = await res.json();
+        const vehicle = data.vehicle;
+        const live = data.data;
+
+        document.getElementById('vehicle-panel').classList.remove('hidden');
+        document.getElementById('connection-status').innerHTML = `
+          <i class="fa-solid fa-check-circle text-emerald-400"></i>
+          <span class="text-emerald-400">Tesla Connected</span>
+        `;
+        document.getElementById('vehicle-name').innerText = vehicle.display_name || 'My Tesla';
+        document.getElementById('battery-level').innerText = live.charge_state.battery_level + '%';
+        document.getElementById('battery-range').innerText = live.charge_state.battery_range + ' mi range';
+        document.getElementById('vehicle-location').innerText = 
+          `${live.location_data.latitude.toFixed(4)}, ${live.location_data.longitude.toFixed(4)}`;
+      } catch (e) {}
+    }
+
+    function init() {
+      renderTreasures();
+      loadVehicleData();
+      setInterval(loadVehicleData, 30000);
+    }
+    window.onload = init;
+  </script>
+</body>
+</html>
